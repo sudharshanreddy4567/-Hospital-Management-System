@@ -20,11 +20,11 @@ jobs:
         uses: docker/setup-buildx-action@v2
       
       - name: Build Docker image
-        run: docker-compose build
+        run: docker compose build
 
       # Optional: Add tests here
       # - name: Run tests
-      #   run: docker-compose run web pytest
+      #   run: docker compose run web pytest
 
   deploy:
     runs-on: ubuntu-latest
