@@ -20,7 +20,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
       
       - name: Build Docker image
-        run: docker compose build
+        run: docker compose -f hospital-management/docker-compose.yml build
 
       # Optional: Add tests here
       # - name: Run tests
