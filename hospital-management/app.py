@@ -4,15 +4,53 @@ import mysql.connector
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# MySQL connection
+# ✅ MySQL connection (host changed to Docker service name)
 db = mysql.connector.connect(
-    host="localhost",
+    host="db",  # Important fix for Docker Compose
+    port=3306,
     user="root",
     password="1234",
     database="hospital_db"
 )
-
 cursor = db.cursor()
+
+# ✅ Create tables if not exist (for testing/dev)
+def create_tables():
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL,
+            password VARCHAR(50) NOT NULL
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS patients (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(100),
+            age INT,
+            gender VARCHAR(10),
+            disease VARCHAR(255)
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS appointments (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            patient_name VARCHAR(100),
+            doctor_name VARCHAR(100),
+            appointment_date DATE
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS patient_records (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            patient_name VARCHAR(100),
+            treatment_details TEXT,
+            bill_amount FLOAT
+        )
+    """)
+    db.commit()
+
+create_tables()
 
 @app.route('/')
 def home():
@@ -49,9 +87,12 @@ def add_patient():
         gender = request.form['gender']
         disease = request.form['disease']
 
-        cursor.execute("INSERT INTO patients (name, age, gender, disease) VALUES (%s, %s, %s, %s)",
-                       (name, age, gender, disease))
-        db.commit()
+        try:
+            cursor.execute("INSERT INTO patients (name, age, gender, disease) VALUES (%s, %s, %s, %s)",
+                           (name, age, gender, disease))
+            db.commit()
+        except Exception as e:
+            return f"Something went wrong: {e}"
 
         return "Patient added successfully! <a href='/dashboard'>Back to Dashboard</a>"
 
@@ -67,9 +108,12 @@ def appointments():
         doctor_name = request.form['doctor_name']
         date = request.form['appointment_date']
 
-        cursor.execute("INSERT INTO appointments (patient_name, doctor_name, appointment_date) VALUES (%s, %s, %s)",
-                       (patient_name, doctor_name, date))
-        db.commit()
+        try:
+            cursor.execute("INSERT INTO appointments (patient_name, doctor_name, appointment_date) VALUES (%s, %s, %s)",
+                           (patient_name, doctor_name, date))
+            db.commit()
+        except Exception as e:
+            return f"Something went wrong: {e}"
 
         return "Appointment booked successfully! <a href='/dashboard'>Back</a>"
 
@@ -85,9 +129,12 @@ def patient_records():
         treatment_details = request.form['treatment_details']
         bill_amount = request.form['bill_amount']
 
-        cursor.execute("INSERT INTO patient_records (patient_name, treatment_details, bill_amount) VALUES (%s, %s, %s)",
-                       (patient_name, treatment_details, bill_amount))
-        db.commit()
+        try:
+            cursor.execute("INSERT INTO patient_records (patient_name, treatment_details, bill_amount) VALUES (%s, %s, %s)",
+                           (patient_name, treatment_details, bill_amount))
+            db.commit()
+        except Exception as e:
+            return f"Something went wrong: {e}"
 
         return "Record saved! <a href='/dashboard'>Back</a>"
 
@@ -99,4 +146,4 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
